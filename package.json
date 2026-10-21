@@ -1,0 +1,31 @@
+{
+  "name": "sketcharena",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {"node": ">=22"},
+  "scripts": {
+    "dev": "concurrently -k -n web,game \"npm:dev:web\" \"npm:dev:server\"",
+    "dev:web": "next dev --hostname 0.0.0.0",
+    "dev:server": "tsx watch server/index.ts",
+    "build": "npm run build:server && npm run build:web",
+    "build:server": "tsc -p tsconfig.server.json",
+    "build:web": "next build",
+    "start:web": "next start --hostname 0.0.0.0",
+    "start:server": "node dist/server/index.js",
+    "typecheck": "next typegen && tsc --noEmit && tsc -p tsconfig.server.json --noEmit",
+    "test": "node --import tsx --test tests/*.test.ts",
+    "db:migrate": "tsx server/migrate.ts"
+  },
+  "dependencies": {
+    "next": "16.4.2", "react": "19.3.1", "react-dom": "19.3.1",
+    "express": "^5.1.0", "socket.io": "^4.8.1", "socket.io-client": "^4.8.1",
+    "zod": "^4.1.0", "pg": "^8.16.0", "redis": "^5.8.0",
+    "helmet": "^8.1.0", "cors": "^2.8.5", "dotenv": "^17.2.0", "lucide-react": "^0.577.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.0", "tsx": "^4.20.0", "concurrently": "^9.2.0",
+    "@types/node": "^24.0.0", "@types/react": "^19.0.0", "@types/react-dom": "^19.0.0",
+    "@types/express": "^5.0.0", "@types/cors": "^2.8.0", "@types/pg": "^8.15.0"
+  }
+}
