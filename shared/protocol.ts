@@ -12,7 +12,7 @@ export interface ChatMessage { id: string; kind: "chat" | "system" | "correct"; 
 export interface RoomView {
   code: string; revision: number; hostId: string; youId: string; phase: Phase;
   settings: Settings; players: Player[]; drawerId: string | null; round: number;
-  turn: number; totalTurns: number; endsAt: number; serverNow: number;
+  turn: number; turnNumber: number; totalTurns: number; endsAt: number; serverNow: number;
   hint: string; word: string | null; choices: string[]; strokes: Stroke[]; messages: ChatMessage[];
 }
 export interface Session { roomCode: string; playerId: string; token: string; }

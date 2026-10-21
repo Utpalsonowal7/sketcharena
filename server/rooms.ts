@@ -33,7 +33,7 @@ export class RoomStore {
     const ratio = room.phase === "drawing" ? (now-room.startedAt)/(room.settings.drawSeconds*1000) : 0;
     return { code: room.code, revision: room.revision, hostId: room.hostId, youId: playerId, settings: room.settings, phase: room.phase,
       players: room.players.map(({id,name,avatar,score,connected,guessed})=>({id,name,avatar,score,connected,guessed})),
-      drawerId: room.drawerId, round: room.round, turn: room.turn, totalTurns: room.order.length, endsAt: room.endsAt, serverNow: now,
+      drawerId: room.drawerId, round: room.round, turn: room.turn, turnNumber: Math.min(room.turnIndex+1,room.order.length), totalTurns: room.order.length, endsAt: room.endsAt, serverNow: now,
       hint: room.phase==="drawing" ? maskWord(room.word,ratio) : "", word: reveal || (isDrawer && room.phase==="drawing") ? room.word : null,
       choices: isDrawer && room.phase==="choosing" ? room.choices : [], strokes: room.strokes, messages: room.messages };
   }

@@ -1,4 +1,5 @@
 import { Server } from "socket.io";
+import { isIP } from "node:net";
 import type { Server as HttpServer } from "node:http";
 import type { z } from "zod";
 import type { Ack, ClientEvents, ServerEvents, Session } from "../shared/protocol.js";
@@ -12,7 +13,7 @@ import * as schemas from "./validation.js";
 import { RateLimit } from "./rate-limit.js";
 
 interface SocketData { session?: Session; turn?: number; }
-export function createGateway(http: HttpServer, origins: string[], store=new RoomStore(), onComplete?: (room: Room)=>Promise<void>) {
+export function createGateway(http: HttpServer, origins: string[], store=new RoomStore(), onComplete?: (room: Room)=>Promise<void>, trustProxy=false) {
   const io=new Server<ClientEvents,ServerEvents,Record<string,never>,SocketData>(http,{cors:{origin:origins,methods:["GET","POST"]},maxHttpBufferSize:32_768,pingTimeout:20_000,
     allowRequest:(req,cb)=>cb(null,!req.headers.origin || origins.includes(req.headers.origin)) });
   const limits=new RateLimit();const saved=new Set<string>();const published=new Map<string,number>();
@@ -23,9 +24,10 @@ export function createGateway(http: HttpServer, origins: string[], store=new Roo
     }
     published.set(room.code,room.revision);
   };
-  io.use((socket,next)=>{if(!limits.allow(`connect:${socket.handshake.address}`,30,60_000)) return next(new Error("Too many connection attempts. Wait a minute."));next();});
+  const address=(socket:{handshake:{address:string;headers:Record<string,string|string[]|undefined>}})=>{const forwarded=socket.handshake.headers["x-forwarded-for"];const candidate=typeof forwarded==="string"?forwarded.split(",").at(-1)?.trim():undefined;return trustProxy&&candidate&&isIP(candidate)?candidate:socket.handshake.address;};
+  io.use((socket,next)=>{if(!limits.allow(`connect:${address(socket)}`,30,60_000)) return next(new Error("Too many connection attempts. Wait a minute."));next();});
   io.on("connection",socket=>{
-    const ip=socket.handshake.address;
+    const ip=address(socket);
     const run=<T>(ack: Ack<T>|undefined, action:()=>T, limit=30, kind="action")=>{
       if(typeof ack!=="function") return;
       try { if(!limits.allow(`${socket.id}:${kind}`,limit,1000)) throw new GameError("Slow down a little and try again.");ack({ok:true,data:action()}); }
