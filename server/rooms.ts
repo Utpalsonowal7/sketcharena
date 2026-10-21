@@ -98,6 +98,13 @@ export class RoomStore {
     const token = randomBytes(32).toString("hex");
     const player = this.member(identity, socketId, token);
     room.players.push(player);
+    if (
+      !room.players.some(
+        (member) => member.id === room.hostId && member.connected,
+      )
+    ) {
+      room.hostId = player.id;
+    }
     message(
       room,
       `${player.name} joined the room.`,

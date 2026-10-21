@@ -33,39 +33,39 @@ For testing, open two independent new tabs with different nicknames. Duplicating
 
 ## Controls
 
-| Action | Control |
-| --- | --- |
-| Draw | Mouse, stylus, or touch |
-| Brush / eraser | `B` / `E` |
-| Undo latest stroke chunk | `Ctrl+Z` / `Cmd+Z`, or toolbar |
-| Submit guess | Enter in the chat field |
-| Save a drawing | Download button |
-| Sound | Speaker button; muted initially |
+| Action                   | Control                         |
+| ------------------------ | ------------------------------- |
+| Draw                     | Mouse, stylus, or touch         |
+| Brush / eraser           | `B` / `E`                       |
+| Undo latest stroke chunk | `Ctrl+Z` / `Cmd+Z`, or toolbar  |
+| Submit guess             | Enter in the chat field         |
+| Save a drawing           | Download button                 |
+| Sound                    | Speaker button; muted initially |
 
 Drawings use a canonical **960 × 640** coordinate system and render at double resolution. Long gestures are streamed as chunks; undo removes one chunk. Drawing and guessing pause while disconnected.
 
 ## Commands
 
-| Command | Purpose |
-| --- | --- |
-| `npm run dev` | Frontend and game server together |
-| `npm run dev:web` / `npm run dev:server` | Individual development processes |
-| `npm run typecheck` | Generate Next.js route types and check frontend/backend types |
-| `npm test` | Domain and live multiplayer tests |
-| `npm run build` | Compile the backend and build the Next.js frontend |
-| `npm run start:web` / `npm run start:server` | Individual production processes |
-| `npm run db:migrate` | Create the optional match-history database schema |
+| Command                                      | Purpose                                                       |
+| -------------------------------------------- | ------------------------------------------------------------- |
+| `npm run dev`                                | Frontend and game server together                             |
+| `npm run dev:web` / `npm run dev:server`     | Individual development processes                              |
+| `npm run typecheck`                          | Generate Next.js route types and check frontend/backend types |
+| `npm test`                                   | Domain and live multiplayer tests                             |
+| `npm run build`                              | Compile the backend and build the Next.js frontend            |
+| `npm run start:web` / `npm run start:server` | Individual production processes                               |
+| `npm run db:migrate`                         | Create the optional match-history database schema             |
 
 ## Environment
 
-| Variable | Purpose |
-| --- | --- |
+| Variable                      | Purpose                                                                                                                                            |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `NEXT_PUBLIC_GAME_SERVER_URL` | Browser connection URL. Development defaults to localhost:4000; production defaults to same origin. Set before building when using separate hosts. |
-| `PORT` | Game-server port, default 4000 |
-| `CLIENT_ORIGIN` | Exact allowed browser origins, comma-separated, without trailing slashes; default localhost:3000 |
-| `DATABASE_URL` | Optional PostgreSQL connection URL |
-| `REDIS_URL` | Optional Redis connection URL |
-| `TRUST_PROXY` | Defaults to false; enable only behind one trusted proxy with direct backend access blocked |
+| `PORT`                        | Game-server port, default 4000                                                                                                                     |
+| `CLIENT_ORIGIN`               | Exact allowed browser origins, comma-separated, without trailing slashes; default localhost:3000                                                   |
+| `DATABASE_URL`                | Optional PostgreSQL connection URL                                                                                                                 |
+| `REDIS_URL`                   | Optional Redis connection URL                                                                                                                      |
+| `TRUST_PROXY`                 | Defaults to false; enable only behind one trusted proxy with direct backend access blocked                                                         |
 
 Restart the server after environment changes. Rebuild the frontend when changing public variables. Never commit real credentials or `.env` files.
 

@@ -23,7 +23,8 @@ export function ChatPanel({
     (room.phase === "drawing" &&
       (room.drawerId === room.youId || Boolean(me?.guessed)));
   useEffect(() => {
-    bottom.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    const panel = bottom.current?.parentElement;
+    if (panel) panel.scrollTop = panel.scrollHeight;
   }, [room.messages.at(-1)?.id]);
   return (
     <aside className="chat-panel panel">

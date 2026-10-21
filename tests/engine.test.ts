@@ -5,7 +5,7 @@ import { RoomStore } from "../server/rooms.js";
 import { startGame, chooseWord, settle } from "../server/game.js";
 import { sendChat } from "../server/chat.js";
 import { addStroke, clearCanvas, undoStroke } from "../server/drawing.js";
-import { disconnect, resume, sweep } from "../server/recovery.js";
+import { disconnect, leave, resume, sweep } from "../server/recovery.js";
 import {
   chatSchema,
   identitySchema,
@@ -163,4 +163,36 @@ test("rate windows reset without admitting bursts above the limit", () => {
   assert.equal(rate.allow("chat", 2, 1000, 0), true);
   assert.equal(rate.allow("chat", 2, 1000, 0), false);
   assert.equal(rate.allow("chat", 2, 1000, 1000), true);
+});
+
+test("new arrivals take host control after an empty lobby is reopened", () => {
+  const { store, room, a, b } = setup();
+  leave(room, a.playerId, "socket-a", now);
+  leave(room, b.playerId, "socket-b", now);
+  const newcomer = store.join(
+    room.code,
+    { name: "Newcomer", avatar: "owl" },
+    "new",
+    now + 1000,
+  );
+  assert.equal(room.hostId, newcomer.playerId);
+  store.join(
+    room.code,
+    { name: "Friend", avatar: "dog" },
+    "friend",
+    now + 2000,
+  );
+  assert.doesNotThrow(() => startGame(room, newcomer.playerId, now + 3000));
+});
+
+test("a rematch resets its display counter while rejecting older turn commands", () => {
+  const { store, room, a } = setup();
+  room.settings.rounds = 1;
+  startGame(room, a.playerId, now);
+  const oldTurn = room.turn;
+  for (let i = 0; i < 6; i++) settle(room, room.endsAt);
+  assert.equal(room.phase, "finished");
+  startGame(room, a.playerId, now + 200_000);
+  assert.equal(store.view(room, a.playerId, now + 200_000).turnNumber, 1);
+  assert.ok(room.turn > oldTurn);
 });

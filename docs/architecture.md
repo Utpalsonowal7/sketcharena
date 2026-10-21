@@ -14,18 +14,18 @@ Deadlines are checked inside commands and on a 250 ms maintenance tick. Late gue
 
 Every command requires an acknowledgment. Success is `{ok:true,data}`; failure is `{ok:false,error}`. Void success data may be omitted during serialization.
 
-| Event | Payload | Required authority |
-| --- | --- | --- |
-| `room:create` | name, avatar | Unbound socket |
-| `room:join` | code, name, avatar | Unbound socket; room between matches |
-| `room:resume` | roomCode, playerId, token | Valid guest credential |
-| `room:leave` | None | Bound guest |
-| `room:settings` | rounds, drawSeconds, maxPlayers, category | Host between matches |
-| `game:start` | None | Host; at least two connected guests |
-| `game:choose` | word, turn | Current artist during selection |
-| `chat:send` | text, turn | Bound guest; artists/solved players cannot chat during drawing |
-| `canvas:stroke` | id, turn, color, size, tool, points[] | Current artist before deadline |
-| `canvas:undo` / `canvas:clear` | turn | Current artist before deadline |
+| Event                          | Payload                                   | Required authority                                             |
+| ------------------------------ | ----------------------------------------- | -------------------------------------------------------------- |
+| `room:create`                  | name, avatar                              | Unbound socket                                                 |
+| `room:join`                    | code, name, avatar                        | Unbound socket; room between matches                           |
+| `room:resume`                  | roomCode, playerId, token                 | Valid guest credential                                         |
+| `room:leave`                   | None                                      | Bound guest                                                    |
+| `room:settings`                | rounds, drawSeconds, maxPlayers, category | Host between matches                                           |
+| `game:start`                   | None                                      | Host; at least two connected guests                            |
+| `game:choose`                  | word, turn                                | Current artist during selection                                |
+| `chat:send`                    | text, turn                                | Bound guest; artists/solved players cannot chat during drawing |
+| `canvas:stroke`                | id, turn, color, size, tool, points[]     | Current artist before deadline                                 |
+| `canvas:undo` / `canvas:clear` | turn                                      | Current artist before deadline                                 |
 
 ## Server events and privacy
 

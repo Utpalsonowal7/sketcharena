@@ -122,6 +122,22 @@ test("real sockets isolate rooms, synchronize strokes, reject unauthorized drawi
     request(bad, "room:resume", { ...sb, token: "0".repeat(64) }),
     /expired/,
   );
+  const revealed = new Promise<void>((resolve, reject) => {
+    const timeout = setTimeout(
+      () => reject(new Error("Expired turn was not published")),
+      2000,
+    );
+    const listener = (state: RoomUpdate) => {
+      if (state.phase !== "reveal") return;
+      clearTimeout(timeout);
+      a.off("room:state", listener);
+      resolve();
+    };
+    a.on("room:state", listener);
+  });
+  store.get(sa.roomCode).endsAt = Date.now() - 1;
+  await assert.rejects(request(rejoined, "canvas:stroke", stroke), /artist/);
+  await revealed;
   const health = await fetch(`${url}/health`);
   assert.equal(health.status, 200);
   assert.equal(((await health.json()) as { status: string }).status, "ok");
