@@ -15,12 +15,13 @@ interface SocketData { session?: Session; turn?: number; }
 export function createGateway(http: HttpServer, origins: string[], store=new RoomStore(), onComplete?: (room: Room)=>Promise<void>) {
   const io=new Server<ClientEvents,ServerEvents,Record<string,never>,SocketData>(http,{cors:{origin:origins,methods:["GET","POST"]},maxHttpBufferSize:32_768,pingTimeout:20_000,
     allowRequest:(req,cb)=>cb(null,!req.headers.origin || origins.includes(req.headers.origin)) });
-  const limits=new RateLimit();const saved=new Set<string>();
+  const limits=new RateLimit();const saved=new Set<string>();const published=new Map<string,number>();
   const broadcast=(room:Room,full=false) => {
     for(const member of room.players) { if(!member.socketId) continue;const client=io.sockets.sockets.get(member.socketId);if(!client) continue;
       const view=store.view(room,member.id);const canvas=full||client.data.turn!==room.turn;client.data.turn=room.turn;
       client.emit("room:state",{...view,strokes:canvas?view.strokes:null});
     }
+    published.set(room.code,room.revision);
   };
   io.use((socket,next)=>{if(!limits.allow(`connect:${socket.handshake.address}`,30,60_000)) return next(new Error("Too many connection attempts. Wait a minute."));next();});
   io.on("connection",socket=>{
@@ -49,10 +50,10 @@ export function createGateway(http: HttpServer, origins: string[], store=new Roo
   });
   const timer=setInterval(()=>{
     for(const room of store.rooms.values()) {
-      const rev=room.revision;settle(room);if(rev!==room.revision)broadcast(room);
+      settle(room);if(published.get(room.code)!==room.revision)broadcast(room);
       if(room.phase==="finished"&&room.matchId&&!saved.has(room.matchId)){saved.add(room.matchId);void onComplete?.(room).catch(()=>console.error("Match persistence failed; gameplay is unaffected."));}
     }
-    sweep(store);limits.prune();if(saved.size>1000)saved.clear();
+    sweep(store);for(const code of published.keys())if(!store.rooms.has(code))published.delete(code);limits.prune();if(saved.size>1000)saved.clear();
   },250);
   timer.unref();
   return {io,store,close:async()=>{clearInterval(timer);await new Promise<void>(resolve=>io.close(()=>resolve()));}};
