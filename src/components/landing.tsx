@@ -1,23 +1,340 @@
 "use client";
 import { useEffect, useState } from "react";
-import { ArrowRight, Check, Copy, Globe2, LockKeyhole, Pencil, Play, Sparkles, Users, Zap } from "lucide-react";
+import {
+  ArrowRight,
+  Check,
+  Copy,
+  Globe2,
+  LockKeyhole,
+  Pencil,
+  Play,
+  Sparkles,
+  Users,
+  Zap,
+} from "lucide-react";
 import { AVATARS, type Identity } from "@shared/protocol";
 import { Avatar } from "./avatar";
-export function Landing({onCreate,onJoin,status}:{onCreate:(identity:Identity)=>Promise<void>;onJoin:(identity:Identity,code:string)=>Promise<void>;status:string}) {
-  const [mode,setMode]=useState<"create"|"join">("create");const [name,setName]=useState("");const [avatar,setAvatar]=useState<Identity["avatar"]>("fox");const [code,setCode]=useState("");const [busy,setBusy]=useState(false);const [error,setError]=useState("");
-  useEffect(()=>{const room=new URLSearchParams(window.location.search).get("room");if(room){setCode(room.toUpperCase().slice(0,6));setMode("join");}},[]);
-  return <main>
-    <section className="landing-hero shell"><div className="hero-copy"><span className="eyebrow"><Sparkles size={13}/>DRAW. GUESS. LOSE IT LAUGHING.</span><h1>Bad drawings.<br/><span>Great guesses.</span><svg viewBox="0 0 370 18" aria-hidden="true"><path d="M4 13Q150 0 364 9M42 17Q220 3 337 14"/></svg></h1><p>A blank canvas. A secret word. Your wonderfully<br className="desktop-break"/> unartistic friends. That’s a pretty great game night.</p><div className="hero-tags"><span><Users size={13}/>2–12 players</span><span><Globe2 size={13}/>Right in your browser</span><span><Zap size={13}/>Free to play</span></div>
-      <form id="play" className="play-card" onSubmit={async event=>{event.preventDefault();setBusy(true);setError("");try{if(mode==="create")await onCreate({name,avatar});else await onJoin({name,avatar},code);}catch(err){setError(err instanceof Error?err.message:"Could not open the room.");}finally{setBusy(false);}}}>
-        <div className="play-tabs"><button type="button" className={mode==="create"?"active":""} onClick={()=>{setMode("create");setError("");}}>Create a room</button><button type="button" className={mode==="join"?"active":""} onClick={()=>{setMode("join");setError("");}}>Join friends</button></div>
-        <div className="identity-row"><Avatar value={avatar}/><div className="name-field"><label htmlFor="nickname">YOUR NICKNAME</label><input id="nickname" autoComplete="nickname" placeholder="The next Picasso?" value={name} onChange={e=>setName(e.target.value)} minLength={2} maxLength={18} required/></div></div>
-        <div className="avatar-picker" aria-label="Choose an avatar">{AVATARS.map(item=><button type="button" key={item} className={avatar===item?"selected":""} onClick={()=>setAvatar(item)} aria-label={`Choose ${item} avatar`} aria-pressed={avatar===item}><Avatar value={item}/>{avatar===item&&<span><Check size={8}/></span>}</button>)}</div>
-        {mode==="join"&&<label className="room-code-input">ROOM CODE<input value={code} onChange={e=>setCode(e.target.value.toUpperCase().replace(/[^A-Z2-9]/g,"").slice(0,6))} placeholder="ABC123" minLength={6} maxLength={6} required autoComplete="off"/></label>}
-        {error&&<p className="error" role="alert">{error}</p>}
-        <button className="button button-primary play-submit" disabled={busy||status==="recovering"}>{busy?"Opening the door…":mode==="create"?"Let’s make a little chaos":"Join the room"}<ArrowRight size={17}/></button><span className="play-privacy"><LockKeyhole size={11}/>No sign-up. Just show up.</span>
-      </form>
-    </div><div className="hero-demo" aria-label="Preview of a drawing and guessing round"><span className="demo-sticker">art skills optional ✦</span><div className="demo-window"><div className="demo-top"><span className="demo-dots"><i/><i/><i/></span><span>THE WORD IS…</span><strong>_ _ _ _ _ _ _ _</strong><span className="demo-timer">0:42</span></div><div className="demo-board"><span className="demo-drawing-label"><Avatar value="cat"/>Milo is drawing</span><svg viewBox="0 0 440 310" aria-label="A hand-drawn sailboat"><g fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M103 219q114 7 231-4l-39 47-152 2z" stroke="#292735" strokeWidth="5"/><path d="M218 83v133m-8-124-83 108 82-3z" stroke="#8057e8" strokeWidth="5"/><path d="m230 102 77 92-77 1" stroke="#f2b52f" strokeWidth="6"/><path d="M72 277q25-17 46 0t46 0 46 0 46 0 46 0 46 0" stroke="#56b6d5" strokeWidth="5"/><path d="m321 67 8 4m-6-31 1 8m24 10-7 4" stroke="#ffbd38" strokeWidth="4"/></g><circle cx="319" cy="58" r="13" fill="#ffcc51"/></svg><span className="demo-pencil"><Pencil size={26}/></span></div><div className="demo-tools"><span style={{background:"#292735"}}/><span style={{background:"#8057e8"}}/><span style={{background:"#ffcc51"}}/><span style={{background:"#f2556c"}}/><span style={{background:"#55b98a"}}/><span style={{background:"#46a7e7"}}/><span className="demo-tool-line"/><Pencil size={14}/><span className="demo-room">ROOM · XKCD42</span></div></div><div className="guess-bubble guess-one"><Avatar value="frog"/><div><strong>sam</strong><span>a floating triangle??</span></div></div><div className="guess-bubble guess-two"><Avatar value="fox"/><div><strong>you</strong><span>sailboat!</span></div><span className="correct-tick"><Check size={13}/></span></div><span className="demo-spark">✳</span><span className="demo-caption">masterpieces not required.<br/>good company is.</span></div></section>
-    <section className="how-section shell" id="how-it-works"><div><span className="eyebrow">THE RULES? PRETTY SIMPLE.</span><h2>Less explaining. More playing.</h2></div><div className="how-grid"><article><span className="step-icon purple"><Users size={22}/><i>01</i></span><h3>Bring your people.</h3><p>Make a private room and send the link.<br/>Your crew is one click away.</p></article><article><span className="step-icon yellow"><Pencil size={22}/><i>02</i></span><h3>Draw your heart out.</h3><p>Pick a secret word. Turn it into a doodle.<br/>Questionable art is encouraged.</p></article><article><span className="step-icon mint"><Sparkles size={22}/><i>03</i></span><h3>Guess. Giggle. Repeat.</h3><p>Get it right before the clock runs out.<br/>The quicker the guess, the bigger the score.</p></article></div></section>
-    <section className="landing-bottom shell"><span>✦</span><p>Turns out, the best memories are a little badly drawn.</p><a href="/studio">Warm up in the drawing studio <ArrowRight size={14}/></a></section>
-  </main>;
+export function Landing({
+  onCreate,
+  onJoin,
+  status,
+}: {
+  onCreate: (identity: Identity) => Promise<void>;
+  onJoin: (identity: Identity, code: string) => Promise<void>;
+  status: string;
+}) {
+  const [mode, setMode] = useState<"create" | "join">("create");
+  const [name, setName] = useState("");
+  const [avatar, setAvatar] = useState<Identity["avatar"]>("fox");
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    const room = new URLSearchParams(window.location.search).get("room");
+    if (room) {
+      setCode(room.toUpperCase().slice(0, 6));
+      setMode("join");
+    }
+  }, []);
+  return (
+    <main>
+      <section className="landing-hero shell">
+        <div className="hero-copy">
+          <span className="eyebrow">
+            <Sparkles size={13} />
+            DRAW. GUESS. LOSE IT LAUGHING.
+          </span>
+          <h1>
+            Bad drawings.
+            <br />
+            <span>Great guesses.</span>
+            <svg viewBox="0 0 370 18" aria-hidden="true">
+              <path d="M4 13Q150 0 364 9M42 17Q220 3 337 14" />
+            </svg>
+          </h1>
+          <p>
+            A blank canvas. A secret word. Your wonderfully
+            <br className="desktop-break" /> unartistic friends. That’s a pretty
+            great game night.
+          </p>
+          <div className="hero-tags">
+            <span>
+              <Users size={13} />
+              2–12 players
+            </span>
+            <span>
+              <Globe2 size={13} />
+              Right in your browser
+            </span>
+            <span>
+              <Zap size={13} />
+              Free to play
+            </span>
+          </div>
+          <form
+            id="play"
+            className="play-card"
+            onSubmit={async (event) => {
+              event.preventDefault();
+              setBusy(true);
+              setError("");
+              try {
+                if (mode === "create") await onCreate({ name, avatar });
+                else await onJoin({ name, avatar }, code);
+              } catch (err) {
+                setError(
+                  err instanceof Error
+                    ? err.message
+                    : "Could not open the room.",
+                );
+              } finally {
+                setBusy(false);
+              }
+            }}
+          >
+            <div className="play-tabs">
+              <button
+                type="button"
+                className={mode === "create" ? "active" : ""}
+                onClick={() => {
+                  setMode("create");
+                  setError("");
+                }}
+              >
+                Create a room
+              </button>
+              <button
+                type="button"
+                className={mode === "join" ? "active" : ""}
+                onClick={() => {
+                  setMode("join");
+                  setError("");
+                }}
+              >
+                Join friends
+              </button>
+            </div>
+            <div className="identity-row">
+              <Avatar value={avatar} />
+              <div className="name-field">
+                <label htmlFor="nickname">YOUR NICKNAME</label>
+                <input
+                  id="nickname"
+                  autoComplete="nickname"
+                  placeholder="The next Picasso?"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  minLength={2}
+                  maxLength={18}
+                  required
+                />
+              </div>
+            </div>
+            <div className="avatar-picker" aria-label="Choose an avatar">
+              {AVATARS.map((item) => (
+                <button
+                  type="button"
+                  key={item}
+                  className={avatar === item ? "selected" : ""}
+                  onClick={() => setAvatar(item)}
+                  aria-label={`Choose ${item} avatar`}
+                  aria-pressed={avatar === item}
+                >
+                  <Avatar value={item} />
+                  {avatar === item && (
+                    <span>
+                      <Check size={8} />
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+            {mode === "join" && (
+              <label className="room-code-input">
+                ROOM CODE
+                <input
+                  value={code}
+                  onChange={(e) =>
+                    setCode(
+                      e.target.value
+                        .toUpperCase()
+                        .replace(/[^A-Z2-9]/g, "")
+                        .slice(0, 6),
+                    )
+                  }
+                  placeholder="ABC123"
+                  minLength={6}
+                  maxLength={6}
+                  required
+                  autoComplete="off"
+                />
+              </label>
+            )}
+            {error && (
+              <p className="error" role="alert">
+                {error}
+              </p>
+            )}
+            <button
+              className="button button-primary play-submit"
+              disabled={busy || status === "recovering"}
+            >
+              {busy
+                ? "Opening the door…"
+                : mode === "create"
+                  ? "Let’s make a little chaos"
+                  : "Join the room"}
+              <ArrowRight size={17} />
+            </button>
+            <span className="play-privacy">
+              <LockKeyhole size={11} />
+              No sign-up. Just show up.
+            </span>
+          </form>
+        </div>
+        <div
+          className="hero-demo"
+          aria-label="Preview of a drawing and guessing round"
+        >
+          <span className="demo-sticker">art skills optional ✦</span>
+          <div className="demo-window">
+            <div className="demo-top">
+              <span className="demo-dots">
+                <i />
+                <i />
+                <i />
+              </span>
+              <span>THE WORD IS…</span>
+              <strong>_ _ _ _ _ _ _ _</strong>
+              <span className="demo-timer">0:42</span>
+            </div>
+            <div className="demo-board">
+              <span className="demo-drawing-label">
+                <Avatar value="cat" />
+                Milo is drawing
+              </span>
+              <svg viewBox="0 0 440 310" aria-label="A hand-drawn sailboat">
+                <g fill="none" strokeLinecap="round" strokeLinejoin="round">
+                  <path
+                    d="M103 219q114 7 231-4l-39 47-152 2z"
+                    stroke="#292735"
+                    strokeWidth="5"
+                  />
+                  <path
+                    d="M218 83v133m-8-124-83 108 82-3z"
+                    stroke="#8057e8"
+                    strokeWidth="5"
+                  />
+                  <path
+                    d="m230 102 77 92-77 1"
+                    stroke="#f2b52f"
+                    strokeWidth="6"
+                  />
+                  <path
+                    d="M72 277q25-17 46 0t46 0 46 0 46 0 46 0 46 0"
+                    stroke="#56b6d5"
+                    strokeWidth="5"
+                  />
+                  <path
+                    d="m321 67 8 4m-6-31 1 8m24 10-7 4"
+                    stroke="#ffbd38"
+                    strokeWidth="4"
+                  />
+                </g>
+                <circle cx="319" cy="58" r="13" fill="#ffcc51" />
+              </svg>
+              <span className="demo-pencil">
+                <Pencil size={26} />
+              </span>
+            </div>
+            <div className="demo-tools">
+              <span style={{ background: "#292735" }} />
+              <span style={{ background: "#8057e8" }} />
+              <span style={{ background: "#ffcc51" }} />
+              <span style={{ background: "#f2556c" }} />
+              <span style={{ background: "#55b98a" }} />
+              <span style={{ background: "#46a7e7" }} />
+              <span className="demo-tool-line" />
+              <Pencil size={14} />
+              <span className="demo-room">ROOM · XKCD42</span>
+            </div>
+          </div>
+          <div className="guess-bubble guess-one">
+            <Avatar value="frog" />
+            <div>
+              <strong>sam</strong>
+              <span>a floating triangle??</span>
+            </div>
+          </div>
+          <div className="guess-bubble guess-two">
+            <Avatar value="fox" />
+            <div>
+              <strong>you</strong>
+              <span>sailboat!</span>
+            </div>
+            <span className="correct-tick">
+              <Check size={13} />
+            </span>
+          </div>
+          <span className="demo-spark">✳</span>
+          <span className="demo-caption">
+            masterpieces not required.
+            <br />
+            good company is.
+          </span>
+        </div>
+      </section>
+      <section className="how-section shell" id="how-it-works">
+        <div>
+          <span className="eyebrow">THE RULES? PRETTY SIMPLE.</span>
+          <h2>Less explaining. More playing.</h2>
+        </div>
+        <div className="how-grid">
+          <article>
+            <span className="step-icon purple">
+              <Users size={22} />
+              <i>01</i>
+            </span>
+            <h3>Bring your people.</h3>
+            <p>
+              Make a private room and send the link.
+              <br />
+              Your crew is one click away.
+            </p>
+          </article>
+          <article>
+            <span className="step-icon yellow">
+              <Pencil size={22} />
+              <i>02</i>
+            </span>
+            <h3>Draw your heart out.</h3>
+            <p>
+              Pick a secret word. Turn it into a doodle.
+              <br />
+              Questionable art is encouraged.
+            </p>
+          </article>
+          <article>
+            <span className="step-icon mint">
+              <Sparkles size={22} />
+              <i>03</i>
+            </span>
+            <h3>Guess. Giggle. Repeat.</h3>
+            <p>
+              Get it right before the clock runs out.
+              <br />
+              The quicker the guess, the bigger the score.
+            </p>
+          </article>
+        </div>
+      </section>
+      <section className="landing-bottom shell">
+        <span>✦</span>
+        <p>Turns out, the best memories are a little badly drawn.</p>
+        <a href="/studio">
+          Warm up in the drawing studio <ArrowRight size={14} />
+        </a>
+      </section>
+    </main>
+  );
 }

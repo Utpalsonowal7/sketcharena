@@ -1,14 +1,158 @@
 "use client";
 import { useEffect, useRef, type PointerEvent, type RefObject } from "react";
-import { CANVAS, type DrawInput, type Point, type Stroke } from "@shared/protocol";
+import {
+  CANVAS,
+  type DrawInput,
+  type Point,
+  type Stroke,
+} from "@shared/protocol";
 import { paintAll, paintStroke } from "@/lib/canvas";
-export function CanvasBoard({strokes,turn,enabled,color,size,tool,onStroke,onError,canvasRef}:{strokes:Stroke[];turn:number;enabled:boolean;color:string;size:number;tool:"pen"|"eraser";onStroke:(stroke:DrawInput)=>Promise<void>;onError:(message:string)=>void;canvasRef?:RefObject<HTMLCanvasElement|null>}){
-  const localRef=useRef<HTMLCanvasElement>(null);const ref=canvasRef??localRef;const draft=useRef<Stroke|null>(null);const lastFlush=useRef(0);const painted=useRef({turn:-1,count:0,first:""});const canonical=useRef(strokes);canonical.current=strokes;
-  useEffect(()=>{const canvas=ref.current;if(!canvas)return;const before=painted.current;const first=strokes[0]?.id??"";if(before.turn!==turn||before.first!==first||strokes.length<before.count){paintAll(canvas,strokes);}else{const ctx=canvas.getContext("2d");if(ctx){ctx.setTransform(2,0,0,2,0,0);strokes.slice(before.count).forEach(stroke=>paintStroke(ctx,stroke));}}painted.current={turn,count:strokes.length,first};},[strokes,turn,ref]);
-  useEffect(()=>{if(!enabled){draft.current=null;if(ref.current)paintAll(ref.current,strokes);}},[enabled,ref,strokes]);
-  function point(event:{clientX:number;clientY:number}):Point{const rect=ref.current!.getBoundingClientRect();return{x:Math.max(0,Math.min(CANVAS.width,(event.clientX-rect.left)/rect.width*CANVAS.width)),y:Math.max(0,Math.min(CANVAS.height,(event.clientY-rect.top)/rect.height*CANVAS.height))};}
-  function flush(final=false){const current=draft.current;if(!current||!current.points.length)return;const submitted={...current,points:[...current.points],turn};if(!final){const tail=current.points.at(-1)!;draft.current={...current,id:crypto.randomUUID(),points:[tail]};}else draft.current=null;lastFlush.current=performance.now();void onStroke(submitted).catch(error=>{draft.current=null;if(ref.current)paintAll(ref.current,canonical.current);onError(error instanceof Error?error.message:"Could not send that stroke.");});}
-  function down(event:PointerEvent<HTMLCanvasElement>){if(!enabled||(event.pointerType==="mouse"&&event.button!==0)||draft.current)return;event.preventDefault();event.currentTarget.setPointerCapture(event.pointerId);const stroke:Stroke={id:crypto.randomUUID(),color,size,tool,points:[point(event)]};draft.current=stroke;lastFlush.current=performance.now();const ctx=ref.current?.getContext("2d");if(ctx)paintStroke(ctx,stroke);}
-  function move(event:PointerEvent<HTMLCanvasElement>){const current=draft.current;if(!enabled||!current)return;const p=point(event);const tail=current.points.at(-1)!;if(Math.hypot(p.x-tail.x,p.y-tail.y)<1)return;current.points.push(p);const ctx=ref.current?.getContext("2d");if(ctx)paintStroke(ctx,{...current,points:[tail,p]});if(current.points.length>=100||performance.now()-lastFlush.current>=60)flush();}
-  return <canvas className={`drawing-canvas ${enabled?"can-draw":""}`} ref={ref} width={CANVAS.width*2} height={CANVAS.height*2} aria-label={enabled?"Drawing canvas. Use your mouse, pen, or touch to draw.":"Live drawing canvas"} onPointerDown={down} onPointerMove={move} onPointerUp={()=>flush(true)} onPointerCancel={()=>flush(true)} onLostPointerCapture={()=>{if(draft.current)flush(true);}}/>;
+export function CanvasBoard({
+  strokes,
+  turn,
+  enabled,
+  color,
+  size,
+  tool,
+  onStroke,
+  onError,
+  canvasRef,
+}: {
+  strokes: Stroke[];
+  turn: number;
+  enabled: boolean;
+  color: string;
+  size: number;
+  tool: "pen" | "eraser";
+  onStroke: (stroke: DrawInput) => Promise<void>;
+  onError: (message: string) => void;
+  canvasRef?: RefObject<HTMLCanvasElement | null>;
+}) {
+  const localRef = useRef<HTMLCanvasElement>(null);
+  const ref = canvasRef ?? localRef;
+  const draft = useRef<Stroke | null>(null);
+  const lastFlush = useRef(0);
+  const painted = useRef({ turn: -1, count: 0, first: "" });
+  const canonical = useRef(strokes);
+  canonical.current = strokes;
+  useEffect(() => {
+    const canvas = ref.current;
+    if (!canvas) return;
+    const before = painted.current;
+    const first = strokes[0]?.id ?? "";
+    if (
+      before.turn !== turn ||
+      before.first !== first ||
+      strokes.length < before.count
+    ) {
+      paintAll(canvas, strokes);
+    } else {
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.setTransform(2, 0, 0, 2, 0, 0);
+        strokes
+          .slice(before.count)
+          .forEach((stroke) => paintStroke(ctx, stroke));
+      }
+    }
+    painted.current = { turn, count: strokes.length, first };
+  }, [strokes, turn, ref]);
+  useEffect(() => {
+    if (!enabled) {
+      draft.current = null;
+      if (ref.current) paintAll(ref.current, strokes);
+    }
+  }, [enabled, ref, strokes]);
+  function point(event: { clientX: number; clientY: number }): Point {
+    const rect = ref.current!.getBoundingClientRect();
+    return {
+      x: Math.max(
+        0,
+        Math.min(
+          CANVAS.width,
+          ((event.clientX - rect.left) / rect.width) * CANVAS.width,
+        ),
+      ),
+      y: Math.max(
+        0,
+        Math.min(
+          CANVAS.height,
+          ((event.clientY - rect.top) / rect.height) * CANVAS.height,
+        ),
+      ),
+    };
+  }
+  function flush(final = false) {
+    const current = draft.current;
+    if (!current || !current.points.length) return;
+    const submitted = { ...current, points: [...current.points], turn };
+    if (!final) {
+      const tail = current.points.at(-1)!;
+      draft.current = { ...current, id: crypto.randomUUID(), points: [tail] };
+    } else draft.current = null;
+    lastFlush.current = performance.now();
+    void onStroke(submitted).catch((error) => {
+      draft.current = null;
+      if (ref.current) paintAll(ref.current, canonical.current);
+      onError(
+        error instanceof Error ? error.message : "Could not send that stroke.",
+      );
+    });
+  }
+  function down(event: PointerEvent<HTMLCanvasElement>) {
+    if (
+      !enabled ||
+      (event.pointerType === "mouse" && event.button !== 0) ||
+      draft.current
+    )
+      return;
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    const stroke: Stroke = {
+      id: crypto.randomUUID(),
+      color,
+      size,
+      tool,
+      points: [point(event)],
+    };
+    draft.current = stroke;
+    lastFlush.current = performance.now();
+    const ctx = ref.current?.getContext("2d");
+    if (ctx) paintStroke(ctx, stroke);
+  }
+  function move(event: PointerEvent<HTMLCanvasElement>) {
+    const current = draft.current;
+    if (!enabled || !current) return;
+    const p = point(event);
+    const tail = current.points.at(-1)!;
+    if (Math.hypot(p.x - tail.x, p.y - tail.y) < 1) return;
+    current.points.push(p);
+    const ctx = ref.current?.getContext("2d");
+    if (ctx) paintStroke(ctx, { ...current, points: [tail, p] });
+    if (
+      current.points.length >= 100 ||
+      performance.now() - lastFlush.current >= 60
+    )
+      flush();
+  }
+  return (
+    <canvas
+      className={`drawing-canvas ${enabled ? "can-draw" : ""}`}
+      ref={ref}
+      width={CANVAS.width * 2}
+      height={CANVAS.height * 2}
+      aria-label={
+        enabled
+          ? "Drawing canvas. Use your mouse, pen, or touch to draw."
+          : "Live drawing canvas"
+      }
+      onPointerDown={down}
+      onPointerMove={move}
+      onPointerUp={() => flush(true)}
+      onPointerCancel={() => flush(true)}
+      onLostPointerCapture={() => {
+        if (draft.current) flush(true);
+      }}
+    />
+  );
 }

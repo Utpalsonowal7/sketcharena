@@ -23,15 +23,15 @@ services:
       retries: 15
     restart: unless-stopped
   migrate:
-    build: {context: ., target: game}
+    build: { context: ., target: game }
     command: [node, dist/server/migrate.js]
     environment:
       DATABASE_URL: postgresql://sketcharena:${POSTGRES_PASSWORD}@postgres:5432/sketcharena
     depends_on:
-      postgres: {condition: service_healthy}
+      postgres: { condition: service_healthy }
     restart: "no"
   game:
-    build: {context: ., target: game}
+    build: { context: ., target: game }
     environment:
       PORT: 4000
       CLIENT_ORIGIN: ${CLIENT_ORIGIN:-http://localhost:8080}
@@ -39,10 +39,16 @@ services:
       DATABASE_URL: postgresql://sketcharena:${POSTGRES_PASSWORD}@postgres:5432/sketcharena
       REDIS_URL: redis://redis:6379
     depends_on:
-      migrate: {condition: service_completed_successfully}
-      redis: {condition: service_healthy}
+      migrate: { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
     healthcheck:
-      test: [CMD, node, -e, "fetch('http://127.0.0.1:4000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      test:
+        [
+          CMD,
+          node,
+          -e,
+          "fetch('http://127.0.0.1:4000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
       interval: 15s
       timeout: 5s
       start_period: 10s
@@ -55,7 +61,13 @@ services:
       args:
         NEXT_PUBLIC_GAME_SERVER_URL: ${NEXT_PUBLIC_GAME_SERVER_URL:-}
     healthcheck:
-      test: [CMD, node, -e, "fetch('http://127.0.0.1:3000').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      test:
+        [
+          CMD,
+          node,
+          -e,
+          "fetch('http://127.0.0.1:3000').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
       interval: 15s
       timeout: 5s
       start_period: 15s
@@ -66,8 +78,8 @@ services:
     ports: ["8080:80"]
     volumes: ["./nginx.conf:/etc/nginx/conf.d/default.conf:ro"]
     depends_on:
-      game: {condition: service_healthy}
-      web: {condition: service_healthy}
+      game: { condition: service_healthy }
+      web: { condition: service_healthy }
     restart: unless-stopped
 
 volumes:

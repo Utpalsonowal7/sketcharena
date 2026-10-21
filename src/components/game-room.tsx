@@ -1,6 +1,13 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, Clock3, Crown, Pencil, Sparkles, Trophy } from "lucide-react";
+import {
+  ArrowRight,
+  Clock3,
+  Crown,
+  Pencil,
+  Sparkles,
+  Trophy,
+} from "lucide-react";
 import type { Arena } from "@/hooks/use-arena";
 import { rankPlayers } from "@shared/rules";
 import { CanvasBoard } from "./canvas-board";
@@ -9,16 +16,287 @@ import { Scoreboard } from "./scoreboard";
 import { ChatPanel } from "./chat-panel";
 import { Avatar } from "./avatar";
 import { downloadCanvas } from "@/lib/canvas";
-export function GameRoom({arena,onNotice}:{arena:Arena;onNotice:(text:string)=>void}){
-  const room=arena.room!;const [color,setColor]=useState("#242333");const [size,setSize]=useState(6);const [tool,setTool]=useState<"pen"|"eraser">("pen");const [now,setNow]=useState(Date.now());const [confirmClear,setConfirmClear]=useState(false);const canvas=useRef<HTMLCanvasElement>(null);
-  useEffect(()=>{const timer=setInterval(()=>setNow(Date.now()),200);return()=>clearInterval(timer);},[]);
-  const connected=arena.status==="connected";const artist=room.drawerId===room.youId;const enabled=artist&&room.phase==="drawing"&&connected&&now-arena.offset<room.endsAt;
-  const remaining=Math.max(0,Math.ceil((room.endsAt-(now-arena.offset))/1000));const drawer=room.players.find(p=>p.id===room.drawerId);const ranked=rankPlayers(room.players);
-  async function attempt(action:()=>Promise<void>){try{await action();}catch(err){onNotice((err as Error).message);}}
-  useEffect(()=>{const key=(event:KeyboardEvent)=>{if(!enabled||event.target instanceof HTMLElement&&event.target.closest("input,textarea,select,[contenteditable]"))return;if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==="z"){event.preventDefault();void arena.undo().catch(err=>onNotice(err.message));}else if(!event.ctrlKey&&!event.metaKey&&event.key.toLowerCase()==="b")setTool("pen");else if(!event.ctrlKey&&!event.metaKey&&event.key.toLowerCase()==="e")setTool("eraser");};window.addEventListener("keydown",key);return()=>window.removeEventListener("keydown",key);},[enabled,arena,onNotice]);
-  useEffect(()=>setConfirmClear(false),[room.turn]);
-  return <section className="game-layout"><Scoreboard room={room}/><div className="game-center"><div className="round-bar panel"><div className={`round-timer ${remaining<=10&&room.phase==="drawing"?"urgent":""}`}><Clock3 size={18}/><strong>{remaining.toString().padStart(2,"0")}</strong><span>SEC</span></div><div className="word-display"><span>{room.phase==="drawing"?(artist?"YOU’RE DRAWING":"GUESS THE WORD"):room.phase==="choosing"?"A NEW MASTERPIECE IS COMING":"A LITTLE ROUND OF APPLAUSE"}</span><strong>{room.phase==="drawing"?(artist?room.word:room.hint):room.phase==="reveal"?room.word:room.phase==="finished"?"That’s a wrap!":"Get your guesses ready"}</strong></div><span className="round-label">ROUND <strong>{room.round}/{room.settings.rounds}</strong></span></div>
-      <div className="board-panel panel"><div className="board-stage"><CanvasBoard canvasRef={canvas} strokes={room.strokes} turn={room.turn} enabled={enabled} color={color} size={size} tool={tool} onStroke={arena.stroke} onError={onNotice}/>{room.phase!=="drawing"&&<div className="round-overlay">
-        {room.phase==="choosing"?<><span className="overlay-symbol"><Pencil size={29}/></span><span className="eyebrow">{artist?"YOUR MOMENT TO SHINE":"PASSING THE PENCIL"}</span><h2>{artist?"What’s your masterpiece?":`${drawer?.name??"The artist"} is picking a word.`}</h2><p>{artist?"Choose a word. Your friends will guess it.":"Warm up those wildly creative guesses."}</p>{artist?<div className="word-choices">{room.choices.map(word=><button key={word} onClick={()=>void attempt(()=>arena.choose(word))} disabled={!connected}>{word}<ArrowRight size={15}/></button>)}</div>:<div className="waiting-dots"><i/><i/><i/></div>}<span className="overlay-note">{remaining}s until the drawing starts</span></>:room.phase==="reveal"?<><span className="overlay-symbol yellow"><Sparkles size={30}/></span><span className="eyebrow">THE BIG REVEAL</span><h2>{room.word||"A little technical intermission."}</h2><p>{room.players.filter(p=>p.guessed).length} {room.players.filter(p=>p.guessed).length===1?"person guessed":"people guessed"} it. A masterpiece, clearly.</p><span className="overlay-note">Next artist in {remaining}s</span></>:<><span className="overlay-symbol yellow"><Trophy size={30}/></span><span className="eyebrow">AND THE BRAGGING RIGHTS GO TO…</span><Avatar value={ranked[0]?.avatar??"fox"}/><h2>{ranked[0]?.name}</h2><p>{ranked[0]?.score.toLocaleString()} points of pure creative genius.</p><div className="podium-list">{ranked.slice(0,3).map((p,i)=><span key={p.id}><b>{i+1}.</b>{p.name}<strong>{p.score}</strong></span>)}</div>{room.hostId===room.youId?<button className="button button-primary" onClick={()=>void attempt(arena.start)} disabled={!connected||room.players.filter(p=>p.connected).length<2}>One more round? <ArrowRight size={16}/></button>:<span className="overlay-note">Waiting for the host to start a rematch.</span>}</>}
-      </div>}</div><DrawingToolbar color={color} size={size} tool={tool} onColor={setColor} onSize={setSize} onTool={setTool} onUndo={()=>void attempt(arena.undo)} onClear={()=>setConfirmClear(true)} onExport={()=>{if(canvas.current)downloadCanvas(canvas.current);}} enabled={enabled}/>{confirmClear&&<div className="clear-confirm"><span>Start this drawing over?</span><button className="button button-small button-secondary" onClick={()=>setConfirmClear(false)}>Keep it</button><button className="button button-small button-danger" onClick={()=>{setConfirmClear(false);void attempt(arena.clear);}}>Clear canvas</button></div>}</div><div className="board-footnote"><span><Pencil size={12}/>{artist?"Your pencil. Your rules. Just no letters!":`${drawer?.name??"The artist"} has the pencil.`}</span><span>Turn {room.turnNumber} of {room.totalTurns}</span></div></div><ChatPanel room={room} onSend={arena.chat} connected={connected} onError={onNotice}/></section>;
+export function GameRoom({
+  arena,
+  onNotice,
+}: {
+  arena: Arena;
+  onNotice: (text: string) => void;
+}) {
+  const room = arena.room!;
+  const [color, setColor] = useState("#242333");
+  const [size, setSize] = useState(6);
+  const [tool, setTool] = useState<"pen" | "eraser">("pen");
+  const [now, setNow] = useState(Date.now());
+  const [confirmClear, setConfirmClear] = useState(false);
+  const canvas = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 200);
+    return () => clearInterval(timer);
+  }, []);
+  const connected = arena.status === "connected";
+  const artist = room.drawerId === room.youId;
+  const enabled =
+    artist &&
+    room.phase === "drawing" &&
+    connected &&
+    now - arena.offset < room.endsAt;
+  const remaining = Math.max(
+    0,
+    Math.ceil((room.endsAt - (now - arena.offset)) / 1000),
+  );
+  const drawer = room.players.find((p) => p.id === room.drawerId);
+  const ranked = rankPlayers(room.players);
+  async function attempt(action: () => Promise<void>) {
+    try {
+      await action();
+    } catch (err) {
+      onNotice((err as Error).message);
+    }
+  }
+  useEffect(() => {
+    const key = (event: KeyboardEvent) => {
+      if (
+        !enabled ||
+        (event.target instanceof HTMLElement &&
+          event.target.closest("input,textarea,select,[contenteditable]"))
+      )
+        return;
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z") {
+        event.preventDefault();
+        void arena.undo().catch((err) => onNotice(err.message));
+      } else if (
+        !event.ctrlKey &&
+        !event.metaKey &&
+        event.key.toLowerCase() === "b"
+      )
+        setTool("pen");
+      else if (
+        !event.ctrlKey &&
+        !event.metaKey &&
+        event.key.toLowerCase() === "e"
+      )
+        setTool("eraser");
+    };
+    window.addEventListener("keydown", key);
+    return () => window.removeEventListener("keydown", key);
+  }, [enabled, arena, onNotice]);
+  useEffect(() => setConfirmClear(false), [room.turn]);
+  return (
+    <section className="game-layout">
+      <Scoreboard room={room} />
+      <div className="game-center">
+        <div className="round-bar panel">
+          <div
+            className={`round-timer ${remaining <= 10 && room.phase === "drawing" ? "urgent" : ""}`}
+          >
+            <Clock3 size={18} />
+            <strong>{remaining.toString().padStart(2, "0")}</strong>
+            <span>SEC</span>
+          </div>
+          <div className="word-display">
+            <span>
+              {room.phase === "drawing"
+                ? artist
+                  ? "YOU’RE DRAWING"
+                  : "GUESS THE WORD"
+                : room.phase === "choosing"
+                  ? "A NEW MASTERPIECE IS COMING"
+                  : "A LITTLE ROUND OF APPLAUSE"}
+            </span>
+            <strong>
+              {room.phase === "drawing"
+                ? artist
+                  ? room.word
+                  : room.hint
+                : room.phase === "reveal"
+                  ? room.word
+                  : room.phase === "finished"
+                    ? "That’s a wrap!"
+                    : "Get your guesses ready"}
+            </strong>
+          </div>
+          <span className="round-label">
+            ROUND{" "}
+            <strong>
+              {room.round}/{room.settings.rounds}
+            </strong>
+          </span>
+        </div>
+        <div className="board-panel panel">
+          <div className="board-stage">
+            <CanvasBoard
+              canvasRef={canvas}
+              strokes={room.strokes}
+              turn={room.turn}
+              enabled={enabled}
+              color={color}
+              size={size}
+              tool={tool}
+              onStroke={arena.stroke}
+              onError={onNotice}
+            />
+            {room.phase !== "drawing" && (
+              <div className="round-overlay">
+                {room.phase === "choosing" ? (
+                  <>
+                    <span className="overlay-symbol">
+                      <Pencil size={29} />
+                    </span>
+                    <span className="eyebrow">
+                      {artist ? "YOUR MOMENT TO SHINE" : "PASSING THE PENCIL"}
+                    </span>
+                    <h2>
+                      {artist
+                        ? "What’s your masterpiece?"
+                        : `${drawer?.name ?? "The artist"} is picking a word.`}
+                    </h2>
+                    <p>
+                      {artist
+                        ? "Choose a word. Your friends will guess it."
+                        : "Warm up those wildly creative guesses."}
+                    </p>
+                    {artist ? (
+                      <div className="word-choices">
+                        {room.choices.map((word) => (
+                          <button
+                            key={word}
+                            onClick={() =>
+                              void attempt(() => arena.choose(word))
+                            }
+                            disabled={!connected}
+                          >
+                            {word}
+                            <ArrowRight size={15} />
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="waiting-dots">
+                        <i />
+                        <i />
+                        <i />
+                      </div>
+                    )}
+                    <span className="overlay-note">
+                      {remaining}s until the drawing starts
+                    </span>
+                  </>
+                ) : room.phase === "reveal" ? (
+                  <>
+                    <span className="overlay-symbol yellow">
+                      <Sparkles size={30} />
+                    </span>
+                    <span className="eyebrow">THE BIG REVEAL</span>
+                    <h2>{room.word || "A little technical intermission."}</h2>
+                    <p>
+                      {room.players.filter((p) => p.guessed).length}{" "}
+                      {room.players.filter((p) => p.guessed).length === 1
+                        ? "person guessed"
+                        : "people guessed"}{" "}
+                      it. A masterpiece, clearly.
+                    </p>
+                    <span className="overlay-note">
+                      Next artist in {remaining}s
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="overlay-symbol yellow">
+                      <Trophy size={30} />
+                    </span>
+                    <span className="eyebrow">
+                      AND THE BRAGGING RIGHTS GO TO…
+                    </span>
+                    <Avatar value={ranked[0]?.avatar ?? "fox"} />
+                    <h2>{ranked[0]?.name}</h2>
+                    <p>
+                      {ranked[0]?.score.toLocaleString()} points of pure
+                      creative genius.
+                    </p>
+                    <div className="podium-list">
+                      {ranked.slice(0, 3).map((p, i) => (
+                        <span key={p.id}>
+                          <b>{i + 1}.</b>
+                          {p.name}
+                          <strong>{p.score}</strong>
+                        </span>
+                      ))}
+                    </div>
+                    {room.hostId === room.youId ? (
+                      <button
+                        className="button button-primary"
+                        onClick={() => void attempt(arena.start)}
+                        disabled={
+                          !connected ||
+                          room.players.filter((p) => p.connected).length < 2
+                        }
+                      >
+                        One more round? <ArrowRight size={16} />
+                      </button>
+                    ) : (
+                      <span className="overlay-note">
+                        Waiting for the host to start a rematch.
+                      </span>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+          <DrawingToolbar
+            color={color}
+            size={size}
+            tool={tool}
+            onColor={setColor}
+            onSize={setSize}
+            onTool={setTool}
+            onUndo={() => void attempt(arena.undo)}
+            onClear={() => setConfirmClear(true)}
+            onExport={() => {
+              if (canvas.current) downloadCanvas(canvas.current);
+            }}
+            enabled={enabled}
+          />
+          {confirmClear && (
+            <div className="clear-confirm">
+              <span>Start this drawing over?</span>
+              <button
+                className="button button-small button-secondary"
+                onClick={() => setConfirmClear(false)}
+              >
+                Keep it
+              </button>
+              <button
+                className="button button-small button-danger"
+                onClick={() => {
+                  setConfirmClear(false);
+                  void attempt(arena.clear);
+                }}
+              >
+                Clear canvas
+              </button>
+            </div>
+          )}
+        </div>
+        <div className="board-footnote">
+          <span>
+            <Pencil size={12} />
+            {artist
+              ? "Your pencil. Your rules. Just no letters!"
+              : `${drawer?.name ?? "The artist"} has the pencil.`}
+          </span>
+          <span>
+            Turn {room.turnNumber} of {room.totalTurns}
+          </span>
+        </div>
+      </div>
+      <ChatPanel
+        room={room}
+        onSend={arena.chat}
+        connected={connected}
+        onError={onNotice}
+      />
+    </section>
+  );
 }
