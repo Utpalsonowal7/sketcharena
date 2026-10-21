@@ -21,6 +21,6 @@ export function leave(room: Room,id: string,socketId: string,now=Date.now()): vo
 export function sweep(store: RoomStore,now=Date.now()): void {
   for(const room of store.rooms.values()) {
     if(!room.players.some(p=>p.connected) && now-room.lastActive>90_000) {store.rooms.delete(room.code);continue;}
-    if(room.phase==="lobby" || room.phase==="finished") room.players=room.players.filter(p=>p.connected || !p.disconnectedAt || now-p.disconnectedAt<=90_000);
+    if(room.phase==="lobby" || room.phase==="finished") {const before=room.players.length;room.players=room.players.filter(p=>p.connected || !p.disconnectedAt || now-p.disconnectedAt<=90_000);if(before!==room.players.length)changed(room,now);}
   }
 }
