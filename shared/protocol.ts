@@ -33,4 +33,5 @@ export interface ClientEvents {
   "canvas:undo": (input: { turn: number }, ack: Ack) => void;
   "canvas:clear": (input: { turn: number }, ack: Ack) => void;
 }
-export interface ServerEvents { "room:state": (view: RoomView) => void; "session:replaced": () => void; }
+export type RoomUpdate = Omit<RoomView, "strokes"> & { strokes: Stroke[] | null };
+export interface ServerEvents { "room:state": (view: RoomUpdate) => void; "canvas:stroke": (stroke: DrawInput) => void; "session:replaced": () => void; }
